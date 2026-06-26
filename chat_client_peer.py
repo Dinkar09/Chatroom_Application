@@ -1,27 +1,27 @@
 # chat_client_peer.py
 import asyncio
 import sys
-from chat_server_base import ChatServerBase
 from chat_server_admin import ChatServerAdmin
 
-class ChatClientPeer(ChatServerAdmin, ChatServerBase):
-    """Client class executing remote stream processing routines, inheriting node hosting capabilities."""
+class ChatClientPeer(ChatServerAdmin):
+    """Client node capable of interacting with the Master Hub or becoming the Hub itself."""
     
     def __init__(self) -> None:
-        # Python Method Resolution Order (MRO) correctly cascades class setup
         super().__init__()
+        self.host_ip = '127.0.0.1'
+        self.host_port = 8888
 
     async def receive_messages_stream(self, reader: asyncio.StreamReader) -> None:
-        """Listens continuously to incoming server transmissions and formats the terminal output window."""
+        """Listens continuously to incoming server transmissions."""
         while True:
             network_payload = await reader.readline()
             if not network_payload:
-                print("\n[ALERT] Connection to the central chatroom was severed.")
+                print("\n[ALERT] Connection severed by the Master Hub.")
                 sys.exit(0)
-            print(f"\r{network_payload.decode().strip()}\n> ", end="")
+            print(f"\r{network_payload.decode().strip()}\n> ", end="", flush=True)
 
     async def send_messages_stream(self, writer: asyncio.StreamWriter) -> None:
-        """Captures local peripheral keystrokes and dispatches them down the active outbound network pipe."""
+        """Captures local peripheral keystrokes and dispatches them to the Master Hub."""
         current_event_loop = asyncio.get_running_loop()
         while True:
             user_input = await current_event_loop.run_in_executor(None, input, "> ")
@@ -34,60 +34,98 @@ class ChatClientPeer(ChatServerAdmin, ChatServerBase):
             writer.write((sanitized_input + "\n").encode())
             await writer.drain()
 
+    async def start_master_hub_background(self):
+        """Attempts to bind port 8888. If successful, runs the Hub silently in the background."""
+        try:
+            hub_server = await asyncio.start_server(self.handle_client_connection, self.host_ip, self.host_port)
+            print("[SYSTEM] Successfully initialized Master Hub on 127.0.0.1:8888.")
+            # Starts the server but does not block the client UI
+            asyncio.create_task(hub_server.serve_forever()) 
+        except OSError:
+            # Error 10048 naturally triggers here. We catch it and route to the existing hub!
+            print("[SYSTEM] Master Hub already detected on network. Routing request to existing Hub...")
+
+    async def create_new_chatroom(self) -> None:
+        """Option 1: Spawns the Hub (if needed) and negotiates a new virtual room creation."""
+        room_name = input("Enter a name for your new Chatroom: ").strip()
+        client_username = input("Enter your Admin username: ").strip()
+        
+        # Step 1: Try to spawn the background Hub
+        await self.start_master_hub_background()
+        
+        # Step 2: Connect to the Hub as a client to set up the room
+        try:
+            await asyncio.sleep(0.1) # Micro-pause to let the background hub bind
+            reader, writer = await asyncio.open_connection(self.host_ip, self.host_port)
+            
+            # Send protocol: Action, Room, User
+            writer.write(f"CREATE {room_name} {client_username}\n".encode())
+            await writer.drain()
+            
+            response = (await reader.readline()).decode().strip()
+            
+            if response == "ACCEPTED_ADMIN":
+                print(f"\n[SUCCESS] Virtual Room '{room_name}' created. You are the Admin.")
+                print("Type messages normally. Use '/accept [name]' or '/deny [name]' to authorize users.")
+                print("-" * 60)
+                await asyncio.gather(
+                    self.receive_messages_stream(reader),
+                    self.send_messages_stream(writer)
+                )
+            else:
+                print(f"\n[ERROR] {response}")
+                writer.close()
+                
+        except ConnectionRefusedError:
+            print("\n[FATAL ERROR] Could not connect to Master Hub.")
+
     async def join_existing_chatroom(self) -> None:
-        """Establishes connection to an active network socket and negotiates the entry verification routine."""
+        """Option 2: Connects to Hub and requests authorization to enter a specific room."""
+        room_name = input("Enter the name of the Chatroom you want to join: ").strip()
         client_username = input("Enter your username: ").strip()
         
         try:
-            reader, writer = await asyncio.open_connection('127.0.0.1', 8888)
+            reader, writer = await asyncio.open_connection(self.host_ip, self.host_port)
             
-            # Step 1: Handshake and authentication challenge handling
-            await reader.readline() 
-            writer.write((client_username + "\n").encode())
+            # Send protocol: Action, Room, User
+            writer.write(f"JOIN {room_name} {client_username}\n".encode())
             await writer.drain()
+            
             print("Access request transmitted. Awaiting Admin authorization response...")
+            response = (await reader.readline()).decode().strip()
             
-            # Step 2: Evaluate access stream confirmation
-            handshake_response_payload = await reader.readline()
-            handshake_response = handshake_response_payload.decode().strip()
-            
-            if handshake_response.startswith("DENIED"):
-                print(f"\n[ACCESS DENIED] Connection closed by remote node: {handshake_response}")
+            if response == "ACCEPTED":
+                print("\n[ACCESS GRANTED] You have successfully entered the chatroom!")
+                await asyncio.gather(
+                    self.receive_messages_stream(reader),
+                    self.send_messages_stream(writer)
+                )
+            else:
+                print(f"\n[ACCESS DENIED] {response}")
                 writer.close()
-                return
                 
-            print("\n[ACCESS GRANTED] You have successfully entered the chatroom!")
-            
-            # Step 3: Concurrently launch asymmetric read/write loops
-            await asyncio.gather(
-                self.receive_messages_stream(reader),
-                self.send_messages_stream(writer)
-            )
-            
         except ConnectionRefusedError:
-            print("\n[ERROR] Connection failed. Ensure the remote Admin host is running and reachable.")
+            print("\n[ERROR] Master Hub not found. Someone must select Option 1 first to initialize the Hub.")
 
 # ==========================================
 # APPLICATION INITIALIZER / ENGINE RUNNER
 # ==========================================
 async def main() -> None:
-    print("=== HYBRID P2P ASYNC CHAT COMPONENT ===")
-    print("1. Initialize Network Host Environment (Host as Admin)")
-    print("2. Request Connection to Existing Network Host (Join Chatroom)")
+    print("=== MASTER HUB P2P ASYNC CHAT ===")
+    print("1. Create a New Virtual Chatroom (Become Admin)")
+    print("2. Join an Existing Virtual Chatroom")
     user_selection = input("Select operation mode (1 or 2): ").strip()
     
-    # Initialize unified component instance mapping to target execution parameters
     peer_node = ChatClientPeer()
     
     if user_selection == '1':
-        await peer_node.start_admin_host()
+        await peer_node.create_new_chatroom()
     elif user_selection == '2':
         await peer_node.join_existing_chatroom()
     else:
         print("Error: Invalid application routing choice specified.")
 
 if __name__ == "__main__":
-    # Optimize event loops for explicit cross-platform network performance criteria
     if sys.platform == 'win32':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     

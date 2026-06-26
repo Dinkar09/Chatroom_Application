@@ -5,23 +5,27 @@ class ChatServerBase:
     """Foundational server class managing the shared chat platform data and streaming mechanics."""
     
     def __init__(self) -> None:
-        # Core data platform attributes
-        self.active_connections: dict[asyncio.StreamWriter, str] = {}  # Maps network writer sockets to usernames
-        self.message_history: list[str] = []                          # Stores sequential timeline data
-        self.max_connection_limit: int = 5                             # Total allowable participants (Admin + Clients)
+        # Shared Platform Data Structures mapping room names to their specific data
+        # Format: { "room_name": { writer_object: "username" } }
+        self.rooms: dict[str, dict[asyncio.StreamWriter, str]] = {}  
+        # Format: { "room_name": ["message 1", "message 2"] }
+        self.room_histories: dict[str, list[str]] = {}               
+        self.max_users_per_room: int = 5
 
-    async def broadcast_message(self, message: str, sender_writer: asyncio.StreamWriter = None) -> None:
-        """Appends message to history timeline and safely pushes it out to all active terminal streams."""
-        self.message_history.append(message)
+    async def broadcast_message(self, room_name: str, message: str, sender_writer: asyncio.StreamWriter = None) -> None:
+        """Appends message to the specific room's timeline and pushes it to active terminal streams in that room."""
+        if room_name not in self.rooms:
+            return
+
+        self.room_histories[room_name].append(message)
         
-        # Clean terminal output management: clear line, print message, restore prompt
+        # Clean terminal output management
         print(f"\r{message}\n> ", end="", flush=True)
         
-        for network_writer in list(self.active_connections.keys()):
+        for network_writer in list(self.rooms[room_name].keys()):
             if network_writer != sender_writer:
                 try:
                     network_writer.write((message + "\n").encode())
                     await network_writer.drain()
-                except (ConnectionResetError, RuntimeError):
-                    # Fail silently during broadcast if connection dropped abruptly
+                except (ConnectionResetError, RuntimeError, BrokenPipeError):
                     pass
