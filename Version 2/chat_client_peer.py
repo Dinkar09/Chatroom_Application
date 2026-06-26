@@ -107,9 +107,8 @@ class ChatClientPeer(ChatServerAdmin):
         except ConnectionRefusedError:
             print("\n[ERROR] Master Hub not found. Someone must select Option 1 first to initialize the Hub.")
 
-# ==========================================
 # APPLICATION INITIALIZER / ENGINE RUNNER
-# ==========================================
+
 async def main() -> None:
     print("=== MASTER HUB P2P ASYNC CHAT ===")
     print("1. Create a New Virtual Chatroom (Become Admin)")

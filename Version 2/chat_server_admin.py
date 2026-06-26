@@ -12,6 +12,8 @@ class ChatServerAdmin(ChatServerBase):
 
     async def handle_client_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """Manages incoming connections, routing them to create or join virtual chatrooms."""
+        room_name = None 
+        client_username = "Unknown"
         try:
             # 1. Receive the initial routing protocol from the client
             routing_payload = await reader.readline()
@@ -27,9 +29,8 @@ class ChatServerAdmin(ChatServerBase):
 
             action, room_name, client_username = command_parts[0], command_parts[1], command_parts[2]
 
-            # ==========================================
             # ROUTE 1: CREATE A NEW ROOM
-            # ==========================================
+
             if action == "CREATE":
                 if room_name in self.rooms:
                     writer.write("DENIED: A room with this name already exists.\n".encode())
@@ -49,9 +50,8 @@ class ChatServerAdmin(ChatServerBase):
                 await writer.drain()
                 await self.broadcast_message(room_name, f"🌟 {client_username} created the room '{room_name}'.", sender_writer=writer)
 
-            # ==========================================
             # ROUTE 2: JOIN AN EXISTING ROOM
-            # ==========================================
+
             elif action == "JOIN":
                 if room_name not in self.rooms:
                     writer.write("DENIED: Room not found.\n".encode())
@@ -113,9 +113,8 @@ class ChatServerAdmin(ChatServerBase):
                 writer.close()
                 return
 
-            # ==========================================
             # CONTINUOUS CHAT / COMMAND LOOP
-            # ==========================================
+
             while True:
                 incoming_payload = await reader.readline()
                 if not incoming_payload:
@@ -154,7 +153,7 @@ class ChatServerAdmin(ChatServerBase):
             pass
         finally:
             # Cleanup on disconnect
-            if room_name in self.rooms and writer in self.rooms[room_name]:
+            if room_name and room_name in self.rooms and writer in self.rooms[room_name]:
                 del self.rooms[room_name][writer]
                 await self.broadcast_message(room_name, f"🚪 {client_username} left the chatroom.")
                 

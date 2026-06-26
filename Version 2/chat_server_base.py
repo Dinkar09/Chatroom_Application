@@ -20,7 +20,6 @@ class ChatServerBase:
         self.room_histories[room_name].append(message)
         
         # Clean terminal output management
-        print(f"\r{message}\n> ", end="", flush=True)
         
         for network_writer in list(self.rooms[room_name].keys()):
             if network_writer != sender_writer:
