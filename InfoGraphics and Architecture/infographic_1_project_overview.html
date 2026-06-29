@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatroom Application — Project Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg:        #060C18;
+    --surface:   #0B1628;
+    --card:      #0F1E35;
+    --border:    #1B3050;
+    --cyan:      #00E5FF;
+    --purple:    #A855F7;
+    --green:     #10FF88;
+    --amber:     #FFAA33;
+    --red:       #FF4466;
+    --text:      #D9EEFF;
+    --muted:     #6A8FAF;
+    --dim:       #3A5570;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--text);
+    width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #060C18 0%, #0B1628 50%, #060C18 100%);
+    padding: 52px 60px 44px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-glow {
+    position: absolute; top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-glow2 {
+    position: absolute; bottom: -60px; left: 100px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(0,229,255,0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(0,229,255,0.08);
+    border: 1px solid rgba(0,229,255,0.25);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--cyan);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+  .hero h1 {
+    font-size: 42px; font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    position: relative;
+  }
+  .hero h1 .accent { color: var(--cyan); }
+  .hero-sub {
+    font-size: 16px; color: var(--muted);
+    margin-top: 12px; max-width: 580px;
+    line-height: 1.6; position: relative;
+  }
+  .hero-meta {
+    display: flex; gap: 28px; margin-top: 28px;
+    position: relative;
+  }
+  .hero-pill {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--muted);
+  }
+  .hero-pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  /* ─── BODY LAYOUT ─── */
+  .body-wrap {
+    padding: 44px 60px 56px;
+    display: flex; flex-direction: column; gap: 44px;
+  }
+
+  /* ─── SECTION LABELS ─── */
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ─── CLASS HIERARCHY ─── */
+  .hierarchy-wrap {
+    display: flex; align-items: stretch; gap: 0;
+    position: relative;
+  }
+  .class-card {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .class-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+  .card-base::before   { background: linear-gradient(90deg, #2979FF, #00B4D8); }
+  .card-admin::before  { background: linear-gradient(90deg, var(--purple), #EC4899); }
+  .card-peer::before   { background: linear-gradient(90deg, var(--cyan), var(--green)); }
+
+  .class-icon {
+    font-size: 22px; margin-bottom: 10px;
+  }
+  .class-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .class-name.base-name   { color: #60A5FA; }
+  .class-name.admin-name  { color: var(--purple); }
+  .class-name.peer-name   { color: var(--cyan); }
+
+  .class-parent {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .class-parent span { color: var(--muted); }
+
+  .attr-group { margin-bottom: 14px; }
+  .attr-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .attr-item {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 4px; line-height: 1.4;
+  }
+  .attr-item .bullet {
+    width: 4px; height: 4px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .bullet-blue   { background: #60A5FA; }
+  .bullet-purple { background: var(--purple); }
+  .bullet-cyan   { background: var(--cyan); }
+
+  .method-item {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; margin-bottom: 5px; line-height: 1.4;
+  }
+  .method-item .kw { color: #F472B6; }
+  .method-item .fn-blue   { color: #93C5FD; }
+  .method-item .fn-purple { color: #C084FC; }
+  .method-item .fn-cyan   { color: var(--cyan); }
+  .method-item .args { color: var(--dim); }
+
+  /* Arrows between cards */
+  .hier-arrow {
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 4px;
+    padding: 0 14px;
+    flex-shrink: 0;
+  }
+  .arrow-line {
+    width: 36px; height: 2px;
+    background: linear-gradient(90deg, var(--dim), var(--muted));
+    position: relative;
+  }
+  .arrow-line::after {
+    content: '▶';
+    position: absolute; right: -7px; top: -7px;
+    font-size: 9px; color: var(--muted);
+  }
+  .arrow-label {
+    font-size: 9px; color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em; white-space: nowrap;
+  }
+
+  /* ─── FEATURES GRID ─── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .feature-icon { font-size: 24px; margin-bottom: 10px; }
+  .feature-title {
+    font-size: 12px; font-weight: 600; margin-bottom: 5px;
+    color: var(--text);
+  }
+  .feature-desc {
+    font-size: 10.5px; color: var(--muted); line-height: 1.5;
+  }
+
+  /* ─── PROTOCOL FLOW ─── */
+  .protocol-row {
+    display: flex; align-items: stretch; gap: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .proto-panel {
+    flex: 1; padding: 22px 24px;
+    border-right: 1px solid var(--border);
+  }
+  .proto-panel:last-child { border-right: none; }
+  .proto-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+  .proto-msg {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .proto-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    padding: 3px 9px; border-radius: 6px;
+    white-space: nowrap;
+  }
+  .pill-blue   { background: rgba(41,121,255,0.15); color: #60A5FA; border: 1px solid rgba(41,121,255,0.3); }
+  .pill-green  { background: rgba(16,255,136,0.12); color: var(--green); border: 1px solid rgba(16,255,136,0.3); }
+  .pill-amber  { background: rgba(255,170,51,0.12); color: var(--amber); border: 1px solid rgba(255,170,51,0.3); }
+  .pill-red    { background: rgba(255,68,102,0.12); color: var(--red);   border: 1px solid rgba(255,68,102,0.3); }
+  .pill-purple { background: rgba(168,85,247,0.12); color: var(--purple);border: 1px solid rgba(168,85,247,0.3); }
+  .pill-cyan   { background: rgba(0,229,255,0.10); color: var(--cyan);   border: 1px solid rgba(0,229,255,0.25); }
+
+  .proto-desc {
+    font-size: 11px; color: var(--muted);
+  }
+
+  /* ─── DATA STRUCTURES ─── */
+  .ds-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .ds-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .ds-card-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .ds-type-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 600;
+    padding: 2px 8px; border-radius: 5px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .ds-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 600;
+    color: var(--cyan);
+  }
+  .ds-sig {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 7px; padding: 9px 12px;
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .ds-sig .type-kw { color: #60A5FA; }
+  .ds-sig .type-val { color: var(--purple); }
+  .ds-sig .type-key { color: var(--green); }
+  .ds-sig .comment { color: var(--dim); }
+  .ds-desc { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 18px 60px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-left {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--dim);
+  }
+  .footer-right {
+    display: flex; gap: 20px;
+  }
+  .tech-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 5px; padding: 3px 9px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+
+  <div class="badge">
+    <div class="badge-dot"></div>
+    Python · asyncio · P2P · TCP Sockets
+  </div>
+
+  <h1>
+    Master Hub <span class="accent">P2P</span> Async<br>Chatroom Application
+  </h1>
+  <p class="hero-sub">
+    A three-layer async TCP chat system built on Python's asyncio streams — featuring virtual rooms, admin-gated authorization queues, live message broadcasting, and history synchronisation.
+  </p>
+
+  <div class="hero-meta">
+    <div class="hero-pill">
+      <div class="dot" style="background:var(--green)"></div>
+      3 Source Files
+    </div>
+    <div class="hero-pill">
+      <div class="dot" style="background:var(--cyan)"></div>
+      3 Classes (Inherited)
+    </div>
+    <div class="hero-pill">
+      <div class="dot" style="background:var(--purple)"></div>
+      5 Async Methods (Core)
+    </div>
+    <div class="hero-pill">
+      <div class="dot" style="background:var(--amber)"></div>
+      Port 8888 · 127.0.0.1
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ BODY -->
+<div class="body-wrap">
+
+  <!-- ── CLASS HIERARCHY ── -->
+  <div>
+    <div class="section-label">Class Architecture &amp; Inheritance Chain</div>
+    <div class="hierarchy-wrap">
+
+      <!-- ChatServerBase -->
+      <div class="class-card card-base">
+        <div class="class-icon">🏗️</div>
+        <div class="class-name base-name">ChatServerBase</div>
+        <div class="class-parent">chat_server_base.py</div>
+
+        <div class="attr-group">
+          <div class="attr-label">Attributes</div>
+          <div class="attr-item">
+            <div class="bullet bullet-blue"></div>
+            rooms: dict[str, dict[Writer, str]]
+          </div>
+          <div class="attr-item">
+            <div class="bullet bullet-blue"></div>
+            room_histories: dict[str, list[str]]
+          </div>
+          <div class="attr-item">
+            <div class="bullet bullet-blue"></div>
+            max_users_per_room: int = 5
+          </div>
+        </div>
+
+        <div class="attr-group">
+          <div class="attr-label">Methods</div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-blue">broadcast_message</span><span class="args">(room, msg, writer)</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; padding:10px; background:rgba(41,121,255,0.06); border:1px solid rgba(41,121,255,0.15); border-radius:8px;">
+          <div style="font-size:10.5px; color:var(--muted); line-height:1.5;">
+            Foundational layer. Owns all shared state — rooms, histories, and the broadcast pipeline. Writes encoded bytes to each active StreamWriter in a given room.
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow 1 -->
+      <div class="hier-arrow">
+        <div class="arrow-label">extends</div>
+        <div class="arrow-line"></div>
+        <div class="arrow-label">inherits all</div>
+      </div>
+
+      <!-- ChatServerAdmin -->
+      <div class="class-card card-admin">
+        <div class="class-icon">🛡️</div>
+        <div class="class-name admin-name">ChatServerAdmin</div>
+        <div class="class-parent">chat_server_admin.py</div>
+
+        <div class="attr-group">
+          <div class="attr-label">Additional Attributes</div>
+          <div class="attr-item">
+            <div class="bullet bullet-purple"></div>
+            room_admins: dict[str, Writer]
+          </div>
+          <div class="attr-item">
+            <div class="bullet bullet-purple"></div>
+            pending_authorizations: dict[str, dict[str, Future]]
+          </div>
+        </div>
+
+        <div class="attr-group">
+          <div class="attr-label">Methods</div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-purple">handle_client_connection</span><span class="args">(reader, writer)</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; padding:10px; background:rgba(168,85,247,0.06); border:1px solid rgba(168,85,247,0.15); border-radius:8px;">
+          <div style="font-size:10.5px; color:var(--muted); line-height:1.5;">
+            Admin &amp; routing layer. Routes CREATE vs JOIN, manages the asyncio.Future-based authorization gate, handles <code style="color:var(--purple); font-size:10px">/accept</code> &amp; <code style="color:var(--purple); font-size:10px">/deny</code> commands, and owns the cleanup lifecycle.
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow 2 -->
+      <div class="hier-arrow">
+        <div class="arrow-label">extends</div>
+        <div class="arrow-line"></div>
+        <div class="arrow-label">inherits all</div>
+      </div>
+
+      <!-- ChatClientPeer -->
+      <div class="class-card card-peer">
+        <div class="class-icon">🌐</div>
+        <div class="class-name peer-name">ChatClientPeer</div>
+        <div class="class-parent">chat_client_peer.py</div>
+
+        <div class="attr-group">
+          <div class="attr-label">Additional Attributes</div>
+          <div class="attr-item">
+            <div class="bullet bullet-cyan"></div>
+            host_ip: str = '127.0.0.1'
+          </div>
+          <div class="attr-item">
+            <div class="bullet bullet-cyan"></div>
+            host_port: int = 8888
+          </div>
+        </div>
+
+        <div class="attr-group">
+          <div class="attr-label">Methods</div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-cyan">receive_messages_stream</span><span class="args">(reader)</span>
+          </div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-cyan">send_messages_stream</span><span class="args">(writer)</span>
+          </div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-cyan">start_master_hub_background</span><span class="args">()</span>
+          </div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-cyan">create_new_chatroom</span><span class="args">()</span>
+          </div>
+          <div class="method-item">
+            <span class="kw">async def</span>&nbsp;<span class="fn-cyan">join_existing_chatroom</span><span class="args">()</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PROTOCOL MESSAGES ── -->
+  <div>
+    <div class="section-label">Wire Protocol — Message Contract</div>
+    <div class="protocol-row">
+
+      <div class="proto-panel">
+        <div class="proto-title" style="color:#60A5FA;">📤 Client → Hub</div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-blue">CREATE &lt;room&gt; &lt;user&gt;</div>
+          <div class="proto-desc">Initialises a new virtual room, appoints sender as Admin</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-amber">JOIN &lt;room&gt; &lt;user&gt;</div>
+          <div class="proto-desc">Requests entry; triggers Future-based admin authorization gate</div>
+        </div>
+        <div class="proto-msg" style="margin-top:12px;">
+          <div class="proto-pill pill-green">/accept &lt;username&gt;</div>
+          <div class="proto-desc">Admin sets Future → True, unblocks pending JOIN coroutine</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-red">/deny &lt;username&gt;</div>
+          <div class="proto-desc">Admin sets Future → False, client receives DENIED and disconnects</div>
+        </div>
+      </div>
+
+      <div class="proto-panel">
+        <div class="proto-title" style="color:var(--green);">📥 Hub → Client</div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-green">ACCEPTED_ADMIN</div>
+          <div class="proto-desc">Room created successfully — sender enters Admin chat loop</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-cyan">ACCEPTED</div>
+          <div class="proto-desc">JOIN authorised — history sync begins, then live chat loop starts</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-red">DENIED: &lt;reason&gt;</div>
+          <div class="proto-desc">Access refused — room full, not found, or rejected by Admin</div>
+        </div>
+        <div class="proto-msg" style="margin-top:12px;">
+          <div class="proto-pill pill-amber">ACCESS REQUEST</div>
+          <div class="proto-desc">Hub notifies Admin of a pending JOIN with accept/deny instructions</div>
+        </div>
+      </div>
+
+      <div class="proto-panel" style="border-right:none;">
+        <div class="proto-title" style="color:var(--purple);">⚡ Broadcast Messages</div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-purple">🌟 Created room</div>
+          <div class="proto-desc">Emitted to room on first Admin connect</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-cyan">👋 User joined</div>
+          <div class="proto-desc">Broadcast when ACCEPTED peer enters the room</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-red">🚪 User left</div>
+          <div class="proto-desc">Emitted on clean disconnect or EOF</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-red">⚠️ Admin gone</div>
+          <div class="proto-desc">Emitted when Admin disconnects — room frozen</div>
+        </div>
+        <div class="proto-msg">
+          <div class="proto-pill pill-blue">[User (Admin)]: msg</div>
+          <div class="proto-desc">Standard chat — role tag appended for Admin messages</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── FEATURES GRID ── -->
+  <div>
+    <div class="section-label">Core Features</div>
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Async I/O</div>
+        <div class="feature-desc">Non-blocking StreamReader / StreamWriter via asyncio.gather for concurrent send &amp; receive</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🏠</div>
+        <div class="feature-title">Virtual Rooms</div>
+        <div class="feature-desc">Multiple isolated chatrooms on one hub; each with its own member map and history log</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <div class="feature-title">Auth Gate</div>
+        <div class="feature-desc">asyncio.Future suspends JOIN until Admin resolves via /accept or /deny command</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📜</div>
+        <div class="feature-title">History Sync</div>
+        <div class="feature-desc">Newly admitted users receive the full past message log before entering live chat</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔁</div>
+        <div class="feature-title">Self-Hosting</div>
+        <div class="feature-desc">First peer silently binds port 8888 as Hub; subsequent peers detect OSError and route to it</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🧹</div>
+        <div class="feature-title">Clean Lifecycle</div>
+        <div class="feature-desc">finally block handles disconnect, room cleanup, and Admin-gone broadcast automatically</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── DATA STRUCTURES ── -->
+  <div>
+    <div class="section-label">Core Data Structures</div>
+    <div class="ds-grid">
+
+      <div class="ds-card">
+        <div class="ds-card-header">
+          <div class="ds-type-badge" style="background:rgba(41,121,255,0.12);color:#60A5FA;border:1px solid rgba(41,121,255,0.25);">dict</div>
+          <div class="ds-name">rooms</div>
+        </div>
+        <div class="ds-sig">
+          <span class="type-kw">dict</span>[<span class="type-key">str</span>, <span class="type-kw">dict</span>[<span class="type-key">StreamWriter</span>, <span class="type-val">str</span>]]<br>
+          <span class="comment"># { "room_name": { writer: "username" } }</span>
+        </div>
+        <div class="ds-desc">Primary room registry. Maps each room name to its member table, where keys are StreamWriter objects and values are usernames. Enables O(1) broadcast iteration and presence checks.</div>
+      </div>
+
+      <div class="ds-card">
+        <div class="ds-card-header">
+          <div class="ds-type-badge" style="background:rgba(16,255,136,0.10);color:var(--green);border:1px solid rgba(16,255,136,0.25);">dict</div>
+          <div class="ds-name">room_histories</div>
+        </div>
+        <div class="ds-sig">
+          <span class="type-kw">dict</span>[<span class="type-key">str</span>, <span class="type-kw">list</span>[<span class="type-val">str</span>]]<br>
+          <span class="comment"># { "room_name": ["msg1", "msg2", ...] }</span>
+        </div>
+        <div class="ds-desc">Append-only message log per room. Every broadcast appends here first. Replayed sequentially to newly authorised peers during the history sync phase before live mode.</div>
+      </div>
+
+      <div class="ds-card">
+        <div class="ds-card-header">
+          <div class="ds-type-badge" style="background:rgba(168,85,247,0.10);color:var(--purple);border:1px solid rgba(168,85,247,0.25);">dict</div>
+          <div class="ds-name">room_admins</div>
+        </div>
+        <div class="ds-sig">
+          <span class="type-kw">dict</span>[<span class="type-key">str</span>, <span class="type-key">StreamWriter</span>]<br>
+          <span class="comment"># { "room_name": admin_writer }</span>
+        </div>
+        <div class="ds-desc">Maps each room to its Admin's StreamWriter. Used to forward JOIN notifications and to identify Admin in the command loop. Cleared on Admin disconnect, freezing the room.</div>
+      </div>
+
+      <div class="ds-card">
+        <div class="ds-card-header">
+          <div class="ds-type-badge" style="background:rgba(255,170,51,0.10);color:var(--amber);border:1px solid rgba(255,170,51,0.25);">dict</div>
+          <div class="ds-name">pending_authorizations</div>
+        </div>
+        <div class="ds-sig">
+          <span class="type-kw">dict</span>[<span class="type-key">str</span>, <span class="type-kw">dict</span>[<span class="type-val">str</span>, <span class="type-key">Future</span>]]<br>
+          <span class="comment"># { "room": { "username": asyncio.Future } }</span>
+        </div>
+        <div class="ds-desc">The authorization gate. Each pending JOIN creates a Future that suspends the connection coroutine. /accept sets result(True), /deny sets result(False). Resolved futures are deleted immediately.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════ FOOTER -->
+<div class="footer">
+  <div class="footer-left">Master Hub P2P Async Chat — Project Architecture Overview</div>
+  <div class="footer-right">
+    <div class="tech-tag">Python 3.10+</div>
+    <div class="tech-tag">asyncio</div>
+    <div class="tech-tag">StreamReader / StreamWriter</div>
+    <div class="tech-tag">asyncio.Future</div>
+    <div class="tech-tag">TCP · Port 8888</div>
+  </div>
+</div>
+
+</body>
+</html>

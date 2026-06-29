@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master-Hub Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg:      #040A14;
+    --surface: #080F1E;
+    --card:    #0C1828;
+    --border:  #162540;
+    --cyan:    #00E5FF;
+    --blue:    #2979FF;
+    --purple:  #A855F7;
+    --green:   #00E676;
+    --amber:   #FFB300;
+    --red:     #FF3D57;
+    --text:    #D0E8FF;
+    --muted:   #5A7A9A;
+    --dim:     #2A4060;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Space Grotesk', sans-serif;
+    color: var(--text);
+    width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 46px 60px 40px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #040A14 0%, #08142A 60%, #040A14 100%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  .hero-glow-r {
+    position: absolute; top: -100px; right: -50px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(41,121,255,0.14) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(41,121,255,0.10);
+    border: 1px solid rgba(41,121,255,0.30);
+    border-radius: 20px; padding: 5px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #60A5FA; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 18px;
+  }
+  .badge-dot {
+    width: 6px; height: 6px; background: #60A5FA;
+    border-radius: 50%; animation: blink 1.8s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero h1 {
+    font-size: 40px; font-weight: 700;
+    letter-spacing: -0.02em; line-height: 1.1;
+    position: relative;
+  }
+  .hero h1 .a1 { color: var(--cyan); }
+  .hero h1 .a2 { color: var(--blue); }
+  .hero-sub {
+    font-size: 15px; color: var(--muted);
+    margin-top: 11px; max-width: 620px;
+    line-height: 1.65; position: relative;
+  }
+  .hero-stats {
+    display: flex; gap: 32px; margin-top: 26px; position: relative;
+  }
+  .stat-item { text-align: left; }
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px; font-weight: 600;
+  }
+  .stat-lbl {
+    font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  /* ─── MAIN CONTENT ─── */
+  .content { padding: 44px 60px 52px; display: flex; flex-direction: column; gap: 42px; }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* ─── TOPOLOGY DIAGRAM ─── */
+  .topology-wrap {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px 40px;
+    overflow: hidden;
+    min-height: 420px;
+  }
+  .topo-bg-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(0,229,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  /* Hub node */
+  .hub-node {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140px; height: 140px;
+    z-index: 10;
+  }
+  .hub-ring-outer {
+    position: absolute; inset: -18px;
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 50%;
+    animation: spin 20s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hub-ring-mid {
+    position: absolute; inset: -8px;
+    border: 1px dashed rgba(0,229,255,0.20);
+    border-radius: 50%;
+    animation: spin 14s linear infinite reverse;
+  }
+  .hub-body {
+    position: absolute; inset: 0;
+    background: radial-gradient(135deg, #0D2040, #0A1830);
+    border: 2px solid rgba(0,229,255,0.50);
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    box-shadow:
+      0 0 24px rgba(0,229,255,0.18),
+      0 0 60px rgba(0,229,255,0.08),
+      inset 0 0 20px rgba(0,229,255,0.05);
+  }
+  .hub-icon { font-size: 28px; margin-bottom: 4px; }
+  .hub-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 600; color: var(--cyan);
+    text-align: center; letter-spacing: 0.06em;
+  }
+  .hub-port {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: rgba(0,229,255,0.6);
+    margin-top: 2px;
+  }
+
+  /* Peer nodes */
+  .peer-node {
+    position: absolute;
+    width: 90px; height: 90px;
+    z-index: 10;
+  }
+  .peer-body {
+    width: 100%; height: 100%;
+    border: 1.5px solid;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
+  }
+  .peer-icon { font-size: 18px; margin-bottom: 3px; }
+  .peer-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 600;
+    text-align: center; padding: 0 4px;
+  }
+  .peer-role {
+    font-size: 8px; font-family: 'JetBrains Mono', monospace;
+    margin-top: 1px; opacity: 0.7; text-align: center;
+  }
+
+  .node-admin {
+    top: 8%; left: 50%;
+    transform: translateX(-50%);
+  }
+  .node-admin .peer-body {
+    border-color: rgba(0,230,118,0.55);
+    background: radial-gradient(135deg, #0A1E14, #0A1828);
+    box-shadow: 0 0 16px rgba(0,230,118,0.15);
+  }
+  .node-admin .peer-label { color: var(--green); }
+
+  .node-peer1 {
+    top: 28%; left: 5%;
+  }
+  .node-peer1 .peer-body {
+    border-color: rgba(0,229,255,0.40);
+    background: radial-gradient(135deg, #0A1A26, #080F1E);
+    box-shadow: 0 0 14px rgba(0,229,255,0.10);
+  }
+  .node-peer1 .peer-label { color: var(--cyan); }
+
+  .node-peer2 {
+    top: 28%; right: 5%;
+  }
+  .node-peer2 .peer-body {
+    border-color: rgba(0,229,255,0.40);
+    background: radial-gradient(135deg, #0A1A26, #080F1E);
+    box-shadow: 0 0 14px rgba(0,229,255,0.10);
+  }
+  .node-peer2 .peer-label { color: var(--cyan); }
+
+  .node-pending {
+    bottom: 12%; left: 15%;
+  }
+  .node-pending .peer-body {
+    border-color: rgba(255,179,0,0.45);
+    background: radial-gradient(135deg, #1A1406, #0A0E1A);
+    box-shadow: 0 0 14px rgba(255,179,0,0.12);
+    animation: pendingPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes pendingPulse {
+    0%,100%{ box-shadow: 0 0 14px rgba(255,179,0,0.12); }
+    50%    { box-shadow: 0 0 24px rgba(255,179,0,0.28); }
+  }
+  .node-pending .peer-label { color: var(--amber); }
+
+  .node-denied {
+    bottom: 12%; right: 15%;
+  }
+  .node-denied .peer-body {
+    border-color: rgba(255,61,87,0.35);
+    background: radial-gradient(135deg, #1A0A0E, #080F1E);
+    box-shadow: 0 0 10px rgba(255,61,87,0.08);
+    opacity: 0.65;
+  }
+  .node-denied .peer-label { color: var(--red); }
+
+  /* SVG connector lines */
+  .topo-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 1; pointer-events: none;
+  }
+
+  /* Connection flow labels */
+  .conn-label {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 600;
+    padding: 3px 8px; border-radius: 5px;
+    pointer-events: none; z-index: 15;
+    white-space: nowrap;
+  }
+  .lbl-create {
+    top: 24%; left: 50%; transform: translateX(-50%);
+    background: rgba(0,230,118,0.12); color: var(--green);
+    border: 1px solid rgba(0,230,118,0.25);
+  }
+  .lbl-join1 {
+    top: 42%; left: 20%;
+    background: rgba(0,229,255,0.10); color: var(--cyan);
+    border: 1px solid rgba(0,229,255,0.22);
+  }
+  .lbl-join2 {
+    top: 42%; right: 20%;
+    background: rgba(0,229,255,0.10); color: var(--cyan);
+    border: 1px solid rgba(0,229,255,0.22);
+  }
+  .lbl-pending {
+    bottom: 30%; left: 26%;
+    background: rgba(255,179,0,0.10); color: var(--amber);
+    border: 1px solid rgba(255,179,0,0.25);
+  }
+  .lbl-denied {
+    bottom: 30%; right: 21%;
+    background: rgba(255,61,87,0.10); color: var(--red);
+    border: 1px solid rgba(255,61,87,0.22);
+  }
+
+  /* Virtual rooms inside hub area */
+  .room-pills {
+    position: absolute;
+    bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 15;
+  }
+  .room-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 600;
+    padding: 3px 10px; border-radius: 12px;
+    background: rgba(0,229,255,0.07);
+    border: 1px solid rgba(0,229,255,0.20);
+    color: var(--muted);
+  }
+  .room-pill.active {
+    background: rgba(0,229,255,0.12);
+    border-color: rgba(0,229,255,0.30);
+    color: var(--cyan);
+  }
+
+  /* ─── PORT BINDING LOGIC ─── */
+  .bind-flow {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+  .bind-header {
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 600; color: var(--cyan);
+    background: rgba(0,229,255,0.04);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .bind-body {
+    padding: 24px;
+    display: flex; gap: 16px; align-items: center;
+  }
+  .bind-step {
+    flex: 1;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--dim);
+    border-radius: 10px; padding: 16px;
+  }
+  .bind-step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .bind-step-title {
+    font-size: 13px; font-weight: 600; margin-bottom: 6px;
+  }
+  .bind-step-desc {
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+  }
+  .bind-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--green);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--dim);
+    border-radius: 5px; padding: 6px 10px;
+    margin-top: 8px; display: block;
+  }
+  .bind-arrow {
+    font-size: 18px; color: var(--dim); flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .bind-arrow-label {
+    font-size: 9px; color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    writing-mode: horizontal-tb;
+  }
+
+  /* ─── AUTH FLOW ─── */
+  .auth-flow {
+    display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr 40px 1fr;
+    gap: 0; align-items: center;
+  }
+  .af-node {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+    text-align: center;
+  }
+  .af-icon { font-size: 20px; margin-bottom: 8px; }
+  .af-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .af-desc { font-size: 10px; color: var(--muted); line-height: 1.4; }
+  .af-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 600;
+    padding: 2px 8px; border-radius: 5px;
+    display: inline-block; margin-top: 6px;
+  }
+  .af-arrow {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px;
+  }
+  .af-arrow-line {
+    font-size: 16px; color: var(--muted);
+  }
+  .af-arrow-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px; color: var(--dim); white-space: nowrap;
+  }
+
+  /* ─── OSI LAYER PANEL ─── */
+  .osi-row {
+    display: flex; gap: 12px;
+  }
+  .osi-card {
+    flex: 1; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px; display: flex; gap: 14px;
+    align-items: flex-start;
+  }
+  .osi-layer-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    padding: 5px 9px; border-radius: 8px;
+    text-align: center; flex-shrink: 0; min-width: 46px;
+  }
+  .osi-content { flex: 1; }
+  .osi-layer-name {
+    font-size: 12px; font-weight: 600; margin-bottom: 4px;
+  }
+  .osi-layer-detail {
+    font-size: 11px; color: var(--muted); line-height: 1.5;
+  }
+  .osi-layer-detail code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 18px 60px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-left {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+  }
+  .footer-right { display: flex; gap: 12px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+  }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow-r"></div>
+
+  <div class="badge">
+    <div class="badge-dot"></div>
+    Network Architecture · TCP · asyncio · Hub-and-Spoke
+  </div>
+
+  <h1>
+    <span class="a1">Master Hub</span> <span class="a2">Architecture</span>
+  </h1>
+  <p class="hero-sub">
+    A self-electing, single-hub topology where the first peer to bind port 8888 silently becomes the central relay. All virtual rooms, authorization queues, and broadcast state live exclusively on the Hub — peers remain thin clients.
+  </p>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--cyan)">8888</div>
+      <div class="stat-lbl">Hub TCP Port</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--green)">5 max</div>
+      <div class="stat-lbl">Peers / Room</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--purple)">N</div>
+      <div class="stat-lbl">Virtual Rooms</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" style="color:var(--amber)">1</div>
+      <div class="stat-lbl">Hub Process</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ CONTENT -->
+<div class="content">
+
+  <!-- ── TOPOLOGY DIAGRAM ── -->
+  <div>
+    <div class="section-label">Network Topology — Hub-and-Spoke Model</div>
+
+    <div class="topology-wrap">
+      <div class="topo-bg-glow"></div>
+
+      <!-- SVG connection lines -->
+      <svg class="topo-svg" viewBox="0 0 1080 380" preserveAspectRatio="none">
+        <!-- Admin → Hub (top center) -->
+        <line x1="540" y1="80" x2="540" y2="155" stroke="rgba(0,230,118,0.45)" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <!-- Peer1 → Hub (top left) -->
+        <line x1="155" y1="160" x2="465" y2="200" stroke="rgba(0,229,255,0.35)" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <!-- Peer2 → Hub (top right) -->
+        <line x1="925" y1="160" x2="615" y2="200" stroke="rgba(0,229,255,0.35)" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <!-- Pending → Hub (bottom left) -->
+        <line x1="215" y1="300" x2="480" y2="240" stroke="rgba(255,179,0,0.45)" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <!-- Denied (no active connection - faded) -->
+        <line x1="860" y1="300" x2="600" y2="240" stroke="rgba(255,61,87,0.20)" stroke-width="1.5" stroke-dasharray="3,5"/>
+        <!-- Pulse dots on active lines -->
+        <circle r="3.5" fill="rgba(0,230,118,0.9)">
+          <animateMotion dur="2.5s" repeatCount="indefinite" path="M540,80 L540,155"/>
+        </circle>
+        <circle r="3.5" fill="rgba(0,229,255,0.8)">
+          <animateMotion dur="2.2s" repeatCount="indefinite" path="M155,160 L465,200"/>
+        </circle>
+        <circle r="3.5" fill="rgba(0,229,255,0.8)">
+          <animateMotion dur="2.8s" repeatCount="indefinite" path="M925,160 L615,200"/>
+        </circle>
+        <circle r="3" fill="rgba(255,179,0,0.8)">
+          <animateMotion dur="3s" repeatCount="indefinite" path="M215,300 L480,240"/>
+        </circle>
+      </svg>
+
+      <!-- HUB (center) -->
+      <div class="hub-node">
+        <div class="hub-ring-outer"></div>
+        <div class="hub-ring-mid"></div>
+        <div class="hub-body">
+          <div class="hub-icon">⚡</div>
+          <div class="hub-label">MASTER HUB</div>
+          <div class="hub-port">127.0.0.1:8888</div>
+        </div>
+      </div>
+
+      <!-- Admin Node -->
+      <div class="peer-node node-admin">
+        <div class="peer-body">
+          <div class="peer-icon">👑</div>
+          <div class="peer-label" style="color:var(--green)">Admin</div>
+          <div class="peer-role" style="color:rgba(0,230,118,0.6)">Room Creator</div>
+        </div>
+      </div>
+
+      <!-- Peer 1 -->
+      <div class="peer-node node-peer1">
+        <div class="peer-body">
+          <div class="peer-icon">💬</div>
+          <div class="peer-label">Peer A</div>
+          <div class="peer-role" style="color:var(--muted)">Accepted</div>
+        </div>
+      </div>
+
+      <!-- Peer 2 -->
+      <div class="peer-node node-peer2">
+        <div class="peer-body">
+          <div class="peer-icon">💬</div>
+          <div class="peer-label">Peer B</div>
+          <div class="peer-role" style="color:var(--muted)">Accepted</div>
+        </div>
+      </div>
+
+      <!-- Pending Node -->
+      <div class="peer-node node-pending">
+        <div class="peer-body">
+          <div class="peer-icon">⏳</div>
+          <div class="peer-label">Peer C</div>
+          <div class="peer-role" style="color:rgba(255,179,0,0.7)">Awaiting…</div>
+        </div>
+      </div>
+
+      <!-- Denied Node -->
+      <div class="peer-node node-denied">
+        <div class="peer-body">
+          <div class="peer-icon">🚫</div>
+          <div class="peer-label">Peer D</div>
+          <div class="peer-role" style="color:rgba(255,61,87,0.6)">Denied</div>
+        </div>
+      </div>
+
+      <!-- Connection labels -->
+      <div class="conn-label lbl-create">CREATE → ACCEPTED_ADMIN</div>
+      <div class="conn-label lbl-join1">JOIN → ACCEPTED</div>
+      <div class="conn-label lbl-join2">JOIN → ACCEPTED</div>
+      <div class="conn-label lbl-pending">JOIN → awaiting Future…</div>
+      <div class="conn-label lbl-denied">JOIN → DENIED</div>
+
+      <!-- Virtual rooms indicator -->
+      <div class="room-pills">
+        <div class="room-pill active">📦 Room: "DevChat"</div>
+        <div class="room-pill active">📦 Room: "GamersHub"</div>
+        <div class="room-pill">📦 Room: "OfficeSpace"</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── PORT BINDING LOGIC ── -->
+  <div>
+    <div class="section-label">Self-Electing Hub — Port Binding Decision Flow</div>
+    <div class="bind-flow">
+      <div class="bind-header">
+        🔌 start_master_hub_background() — First Peer Wins
+      </div>
+      <div class="bind-body">
+
+        <div class="bind-step">
+          <div class="bind-step-num">Step 01 · Any Peer</div>
+          <div class="bind-step-title" style="color:var(--cyan)">Attempt Port Bind</div>
+          <div class="bind-step-desc">Every peer that selects "Create Room" runs asyncio.start_server() targeting 127.0.0.1:8888. The OS grants the bind to exactly one peer — whoever calls it first.</div>
+          <code class="bind-code">asyncio.start_server(handler, '127.0.0.1', 8888)</code>
+        </div>
+
+        <div class="bind-arrow">
+          <span class="af-arrow-line">→</span>
+          <span class="bind-arrow-label">if OSError</span>
+        </div>
+
+        <div class="bind-step">
+          <div class="bind-step-num">Step 02 · Already Bound</div>
+          <div class="bind-step-title" style="color:var(--amber)">OSError Caught (10048)</div>
+          <div class="bind-step-desc">If port 8888 is already held by another peer-hub, the OS raises an OSError. This is not a crash — it is the deliberate detection signal: a Hub already exists.</div>
+          <code class="bind-code">except OSError: → route to existing hub</code>
+        </div>
+
+        <div class="bind-arrow">
+          <span class="af-arrow-line">→</span>
+          <span class="bind-arrow-label">both paths</span>
+        </div>
+
+        <div class="bind-step">
+          <div class="bind-step-num">Step 03 · Either Outcome</div>
+          <div class="bind-step-title" style="color:var(--green)">Connect as Client</div>
+          <div class="bind-step-desc">After the bind attempt (success or failure), the peer waits 100ms then connects to 127.0.0.1:8888 as a standard client to send the CREATE command.</div>
+          <code class="bind-code">await asyncio.sleep(0.1) → open_connection()</code>
+        </div>
+
+        <div class="bind-arrow">
+          <span class="af-arrow-line">→</span>
+          <span class="bind-arrow-label">result</span>
+        </div>
+
+        <div class="bind-step">
+          <div class="bind-step-num">Step 04 · Running State</div>
+          <div class="bind-step-title" style="color:var(--purple)">Hub Runs as Background Task</div>
+          <div class="bind-step-desc">The winner's Hub runs via asyncio.create_task(hub.serve_forever()) — non-blocking, so the same process also runs the client chat UI concurrently.</div>
+          <code class="bind-code">asyncio.create_task(hub.serve_forever())</code>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AUTHORIZATION FLOW ── -->
+  <div>
+    <div class="section-label">Admin Authorization Gate — asyncio.Future Lifecycle</div>
+    <div class="auth-flow">
+
+      <div class="af-node">
+        <div class="af-icon">🙋</div>
+        <div class="af-title" style="color:var(--amber)">Peer Sends JOIN</div>
+        <div class="af-desc">Peer connects to Hub and transmits JOIN &lt;room&gt; &lt;username&gt;</div>
+        <div class="af-badge" style="background:rgba(255,179,0,0.10);color:var(--amber);border:1px solid rgba(255,179,0,0.25)">JOIN room user</div>
+      </div>
+
+      <div class="af-arrow">
+        <div class="af-arrow-line">→</div>
+        <div class="af-arrow-label">notifies</div>
+      </div>
+
+      <div class="af-node">
+        <div class="af-icon">⏸️</div>
+        <div class="af-title" style="color:var(--blue)">Future Created</div>
+        <div class="af-desc">Hub creates asyncio.Future; peer coroutine awaits it — fully suspended</div>
+        <div class="af-badge" style="background:rgba(41,121,255,0.10);color:#60A5FA;border:1px solid rgba(41,121,255,0.25)">await auth_signal</div>
+      </div>
+
+      <div class="af-arrow">
+        <div class="af-arrow-line">→</div>
+        <div class="af-arrow-label">alerts Admin</div>
+      </div>
+
+      <div class="af-node">
+        <div class="af-icon">👑</div>
+        <div class="af-title" style="color:var(--purple)">Admin Decides</div>
+        <div class="af-desc">Admin types /accept or /deny — Hub resolves the Future with True or False</div>
+        <div class="af-badge" style="background:rgba(168,85,247,0.10);color:var(--purple);border:1px solid rgba(168,85,247,0.25)">/accept | /deny</div>
+      </div>
+
+      <div class="af-arrow">
+        <div class="af-arrow-line">→</div>
+        <div class="af-arrow-label">resolves</div>
+      </div>
+
+      <div class="af-node">
+        <div class="af-icon">✅</div>
+        <div class="af-title" style="color:var(--green)">Result Dispatched</div>
+        <div class="af-desc">True → ACCEPTED + history sync. False → DENIED + writer closed.</div>
+        <div class="af-badge" style="background:rgba(0,230,118,0.10);color:var(--green);border:1px solid rgba(0,230,118,0.25)">ACCEPTED / DENIED</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── OSI LAYER BREAKDOWN ── -->
+  <div>
+    <div class="section-label">OSI Model — Protocol Layer Breakdown</div>
+    <div class="osi-row">
+
+      <div class="osi-card">
+        <div class="osi-layer-badge" style="background:rgba(255,61,87,0.12);color:var(--red);border:1px solid rgba(255,61,87,0.25)">L7<br><span style="font-size:8px;font-weight:400">App</span></div>
+        <div class="osi-content">
+          <div class="osi-layer-name" style="color:var(--red)">Application</div>
+          <div class="osi-layer-detail">Custom text protocol: <code style="color:var(--red)">CREATE</code>, <code style="color:var(--red)">JOIN</code>, <code style="color:var(--red)">ACCEPTED</code>, <code style="color:var(--red)">DENIED</code>, <code style="color:var(--red)">/accept</code>, <code style="color:var(--red)">/deny</code>. Newline-delimited frames. History sync block markers.</div>
+        </div>
+      </div>
+
+      <div class="osi-card">
+        <div class="osi-layer-badge" style="background:rgba(255,179,0,0.12);color:var(--amber);border:1px solid rgba(255,179,0,0.25)">L6<br><span style="font-size:8px;font-weight:400">Pres</span></div>
+        <div class="osi-content">
+          <div class="osi-layer-name" style="color:var(--amber)">Presentation</div>
+          <div class="osi-layer-detail">UTF-8 encoding via <code style="color:var(--amber)">.encode()</code> / <code style="color:var(--amber)">.decode()</code>. Newline <code style="color:var(--amber)">\n</code> as frame delimiter. readline() at receiver strips framing.</div>
+        </div>
+      </div>
+
+      <div class="osi-card">
+        <div class="osi-layer-badge" style="background:rgba(0,229,255,0.10);color:var(--cyan);border:1px solid rgba(0,229,255,0.22)">L4<br><span style="font-size:8px;font-weight:400">Tran</span></div>
+        <div class="osi-content">
+          <div class="osi-layer-name" style="color:var(--cyan)">Transport</div>
+          <div class="osi-layer-detail"><strong>TCP</strong> — asyncio StreamReader/StreamWriter wrap a reliable, ordered, byte-stream socket. Port <code style="color:var(--cyan)">8888</code>. drain() ensures kernel buffer flush before next write.</div>
+        </div>
+      </div>
+
+      <div class="osi-card">
+        <div class="osi-layer-badge" style="background:rgba(0,230,118,0.10);color:var(--green);border:1px solid rgba(0,230,118,0.22)">L3<br><span style="font-size:8px;font-weight:400">Net</span></div>
+        <div class="osi-content">
+          <div class="osi-layer-name" style="color:var(--green)">Network</div>
+          <div class="osi-layer-detail">IPv4 loopback address <code style="color:var(--green)">127.0.0.1</code>. All traffic stays within the local machine's loopback interface — no physical NIC traversal.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════ FOOTER -->
+<div class="footer">
+  <div class="footer-left">Master Hub P2P Async Chat — Network Architecture Diagram</div>
+  <div class="footer-right">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Admin / Active</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Peer / Accepted</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Pending Auth</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Denied / Inactive</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div>Virtual Room</div>
+  </div>
+</div>
+
+</body>
+</html>
